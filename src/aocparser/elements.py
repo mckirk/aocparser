@@ -7,14 +7,13 @@ from aocparser.grammar_constructor import GrammarConstructor
 class DSLElement(ABC):
     def __init__(
         self,
+        *,
         tag: str,
-        attributes: dict,
-        content: list,
+        name: str | None,
         grammar_constructor: GrammarConstructor,
     ):
         self.tag = tag
-        self.attributes = attributes
-        self.content = content
+        self.name = name
 
         self.rule_name: str | None = None
         self.rule: str | None = None
@@ -24,10 +23,10 @@ class DSLElement(ABC):
         assert self.rule_name is not None
 
     def get_name(self, *args):
-        return self.attributes.get("n")
+        return self.name
 
-    def get_inner_elements(self):
-        return [c for c in self.content if isinstance(c, DSLElement)]
+    def get_inner_elements(self) -> list["DSLElement"]:
+        return []
 
     def register_transforms(self, transformer, override_rule_name: str | None = None):
         transformer.__setattr__(
@@ -47,7 +46,23 @@ class DSLElement(ABC):
         ...
 
 
-class SequenceElement(DSLElement):
+class DSLMultiElement(DSLElement):
+    def __init__(
+        self,
+        *,
+        tag: str,
+        name: str | None,
+        content: list,
+        grammar_constructor: GrammarConstructor,
+    ):
+        self.content = content
+        super().__init__(tag=tag, name=name, grammar_constructor=grammar_constructor)
+
+    def get_inner_elements(self):
+        return [c for c in self.content if isinstance(c, DSLElement)]
+
+
+class SequenceElement(DSLMultiElement):
     def create_rule(self, grammar_constructor):
         rule_parts = []
         for c in self.content:
@@ -81,12 +96,16 @@ class SequenceElement(DSLElement):
             return vals
 
 
-class ListElement(DSLElement):
-    def __init__(self, tag, attributes, content, grammar_constructor):
+class ContainerElement(DSLMultiElement):
+    def __init__(self, *, tag, name, join, content, grammar_constructor):
         self.inner = SequenceElement(
-            tag + "_inner", dict(), content, grammar_constructor
+            tag=tag + "_inner",
+            name=None,
+            content=content,
+            grammar_constructor=grammar_constructor
         )
-        super().__init__(tag, attributes, content, grammar_constructor)
+        self.join = join
+        super().__init__(tag=tag, name=name, content=content, grammar_constructor=grammar_constructor)
 
     def get_inner_elements(self):
         return [self.inner]
@@ -94,11 +113,12 @@ class ListElement(DSLElement):
     def create_rule(self, grammar_constructor):
         inner_rule_name = self.inner.rule_name
 
-        join = self.attributes.get("join")
-        if join is None:
+        if self.join is None:
             self.rule = f"{inner_rule_name}*"
         else:
-            self.rule = f"{inner_rule_name} ({json.dumps(join)} {inner_rule_name})*"
+            self.rule = (
+                f"{inner_rule_name} ({json.dumps(self.join)} {inner_rule_name})*"
+            )
         self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
 
     def transform(self, *args):
@@ -128,12 +148,13 @@ def build_terminal_elem(terminal, transform_f=None):
 
 
 def build_list_elem(inner_class):
-    def inner(tag, attributes, content, grammar_constructor):
-        return ListElement(
-            tag,
-            attributes,
-            [inner_class(tag + "_inner", dict(), [], grammar_constructor)],
-            grammar_constructor,
+    def inner(tag, name, grammar_constructor):
+        return ContainerElement(
+            tag=tag,
+            name=name,
+            join=None,
+            content=[inner_class(tag=tag + "_inner", name=None, grammar_constructor=grammar_constructor)],
+            grammar_constructor=grammar_constructor,
         )
 
     return inner
@@ -145,11 +166,10 @@ NameElement = build_terminal_elem("CNAME")
 
 
 TAG_TO_CLASS = {
-    "elem": ListElement,
-    "int": IntElement,
-    "word": WordElement,
-    "name": NameElement,
-    "intlist": build_list_elem(IntElement),
-    "wordlist": build_list_elem(WordElement),
-    "namelist": build_list_elem(NameElement),
+    "i": IntElement,
+    "w": WordElement,
+    "n": NameElement,
+    "il": build_list_elem(IntElement),
+    "wl": build_list_elem(WordElement),
+    "nl": build_list_elem(NameElement),
 }

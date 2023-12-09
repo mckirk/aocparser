@@ -7,22 +7,22 @@ def test1():
 Card 1: 1 2 3 4 5 6 7 8 9 10 | 11 12 13 14 15 16 17 18 19 20
 Card 2: 21 22 23 24 25 26 27 28 29 30 | 31 32 33 34 35 36 37 38 39 40"""
 
-    dsl_input = "<elem join='\\n'>Card <int n='key'/>: <intlist n='part1'/> | <intlist n='part2'/></elem>"
+    spec = "[Card {key:i}: {p1:il} `| {p2:il}|\n]"
 
-    parsed = parse(example, dsl_input)
+    parsed = parse(example, spec)
 
     pprint(parsed)
 
     assert parsed == {
         1: {
             "key": 1,
-            "part1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            "part2": [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            "p1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            "p2": [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
         },
         2: {
             "key": 2,
-            "part1": [21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
-            "part2": [31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+            "p1": [21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+            "p2": [31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
         },
     }
 
@@ -35,13 +35,13 @@ seed-to-soil map:
 50 98 2
 52 50 48"""
 
-    dsl_input = """\
-seeds: <intlist n='seeds'/>
+    spec = """\
+seeds: {seeds:il}
 
-<elem join='\\n\\n' n='maps'><name n='key'/>-to-<word n='to'/> map:
-<elem join='\\n' n='vals'><intlist/></elem></elem>"""
+{maps:[{key:w}-to-{to:w} map:
+{vals:[{il}|\n]}|\n\n]}"""
 
-    parsed = parse(example, dsl_input)
+    parsed = parse(example, spec)
 
     pprint(parsed)
 
