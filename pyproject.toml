@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aocparser"
+version = "0.0.1"
+authors = [
+  { name="mckirk", email="mckirk@posteo.de" },
+]
+description = "A simple parser, mainly for parsing Advent of Code input files."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "lark",
+]
+license = {text = "MIT License"}
+
+[project.urls]
+Homepage = "https://github.com/mckirk/aocparser"
+Issues = "https://github.com/mckirk/aocparser/issues"
