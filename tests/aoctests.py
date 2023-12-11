@@ -84,11 +84,19 @@ mem[1] = 1
 mask = 01
 mem[2] = 2"""
 
-    parsed = parse(spec, inp)
+    rt = dict()
+    parsed = parse(spec, inp, return_types_by_name=rt)
 
     pprint(parsed)
 
-    assert parsed == [("mask", "00"), ("mem", [1, 1]), ("mask", "01"), ("mem", [2, 2])]
+    Mask, Mem = rt["Mask"], rt["Mem"]
+
+    assert parsed == [
+        Mask(mask="00", mem=None),
+        Mem(mem=[1, 1], mask=None),
+        Mask(mask="01", mem=None),
+        Mem(mem=[2, 2], mask=None),
+    ]
 
 
 def main():

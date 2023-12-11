@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import namedtuple
 import json
 
 from aocparser.grammar_constructor import GrammarConstructor
@@ -110,10 +111,12 @@ class ContainerElement(DSLMultiElement):
             tag=tag + "_inner",
             name=None,
             content=content,
-            grammar_constructor=grammar_constructor
+            grammar_constructor=grammar_constructor,
         )
         self.join = join
-        super().__init__(tag=tag, name=name, content=content, grammar_constructor=grammar_constructor)
+        super().__init__(
+            tag=tag, name=name, content=content, grammar_constructor=grammar_constructor
+        )
 
     def get_inner_elements(self):
         return [self.inner]
@@ -144,24 +147,39 @@ class ContainerElement(DSLMultiElement):
             res = [v for k, v in elems]
 
         return res
-    
+
 
 class ChoiceElement(DSLElement):
     def __init__(
         self,
         *,
         tag: str,
-        left: list,
-        right: list,
+        left: SequenceElement,
+        right: SequenceElement,
         grammar_constructor: GrammarConstructor,
     ):
+        assert left.name != right.name
+        assert "value" not in [left.name, right.name]
+
         self.left = left
         self.right = right
         super().__init__(tag=tag, name=None, grammar_constructor=grammar_constructor)
 
+        self.returntypes = {
+            left.name: namedtuple(
+                left.name.capitalize(), [left.name, right.name,]
+            ),
+            right.name: namedtuple(
+                right.name.capitalize(), [right.name, left.name,]
+            ),
+        }
+
+        for rt in self.returntypes.values():
+            grammar_constructor.add_return_type(rt.__name__, rt)
+
     def get_inner_elements(self):
         return [self.left, self.right]
-    
+
     def create_rule(self, grammar_constructor):
         """Create a rule that matches either the left or the right rule"""
         self.rule = f"{self.left.rule_name} | {self.right.rule_name}"
@@ -169,7 +187,8 @@ class ChoiceElement(DSLElement):
 
     def transform(self, *args):
         """Return the result of the left or right rule"""
-        return args[0][0]
+        t, v = args[0][0]
+        return self.returntypes[t](v, None)
 
 
 def build_terminal_elem(terminal, transform_f=None):
@@ -192,7 +211,13 @@ def build_list_elem(inner_class):
             tag=tag,
             name=name,
             join=None,
-            content=[inner_class(tag=tag + "_inner", name=None, grammar_constructor=grammar_constructor)],
+            content=[
+                inner_class(
+                    tag=tag + "_inner",
+                    name=None,
+                    grammar_constructor=grammar_constructor,
+                )
+            ],
             grammar_constructor=grammar_constructor,
         )
 
