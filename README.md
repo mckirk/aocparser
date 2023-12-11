@@ -77,3 +77,25 @@ assert parse(spec, example) == [
     },
 ]
 ```
+
+## 2020/day14
+
+```python
+from types import SimpleNamespace as namespace
+from aocparser import parse
+
+example = """\
+mask = 00
+mem[1] = 1
+mask = 01
+mem[2] = 2"""
+
+spec = "[<mask:mask = {w}|mem:mem`[{i}`] = {i}>|\n]"
+
+assert parsed == [
+    namespace(mask="00", mem=None),
+    namespace(mem=[1, 1], mask=None),
+    namespace(mask="01", mem=None),
+    namespace(mem=[2, 2], mask=None),
+]
+```

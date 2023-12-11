@@ -40,8 +40,8 @@ def unescape(text):
 
 
 class DSLTransformer(Transformer):
-    def __init__(self, return_types_by_name: dict = None):
-        self.grammar_constructor = GrammarConstructor(return_types_by_name)
+    def __init__(self):
+        self.grammar_constructor = GrammarConstructor()
 
     def element(self, args):
         if len(args) == 1:
@@ -109,6 +109,6 @@ class DSLTransformer(Transformer):
     CNAME = str
 
 
-def get_parser(return_types_by_name: dict = None):
-    transformer = DSLTransformer(return_types_by_name)
+def get_parser():
+    transformer = DSLTransformer()
     return transformer, Lark(dsl_grammar, parser="lalr", transformer=transformer)

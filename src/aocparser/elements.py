@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
 import json
+from types import SimpleNamespace
 
 from aocparser.grammar_constructor import GrammarConstructor
 
@@ -159,23 +160,10 @@ class ChoiceElement(DSLElement):
         grammar_constructor: GrammarConstructor,
     ):
         assert left.name != right.name
-        assert "value" not in [left.name, right.name]
 
         self.left = left
         self.right = right
         super().__init__(tag=tag, name=None, grammar_constructor=grammar_constructor)
-
-        self.returntypes = {
-            left.name: namedtuple(
-                left.name.capitalize(), [left.name, right.name,]
-            ),
-            right.name: namedtuple(
-                right.name.capitalize(), [right.name, left.name,]
-            ),
-        }
-
-        for rt in self.returntypes.values():
-            grammar_constructor.add_return_type(rt.__name__, rt)
 
     def get_inner_elements(self):
         return [self.left, self.right]
@@ -188,7 +176,8 @@ class ChoiceElement(DSLElement):
     def transform(self, *args):
         """Return the result of the left or right rule"""
         t, v = args[0][0]
-        return self.returntypes[t](v, None)
+        other_t = self.left.name if t == self.right.name else self.right.name
+        return SimpleNamespace(**{t: v, other_t: None})
 
 
 def build_terminal_elem(terminal, transform_f=None):

@@ -1,4 +1,5 @@
 from pprint import pprint
+from types import SimpleNamespace as namespace
 from aocparser import parse
 
 
@@ -75,8 +76,7 @@ BBB = (DDD, EEE)"""
 
 
 def test4():
-    spec = """\
-[<mask:mask = {w}|mem:mem`[{i}`] = {i}>|\n]"""
+    spec = "[<mask:mask = {w}|mem:mem`[{i}`] = {i}>|\n]"
 
     inp = """\
 mask = 00
@@ -84,18 +84,15 @@ mem[1] = 1
 mask = 01
 mem[2] = 2"""
 
-    rt = dict()
-    parsed = parse(spec, inp, return_types_by_name=rt)
+    parsed = parse(spec, inp)
 
     pprint(parsed)
 
-    Mask, Mem = rt["Mask"], rt["Mem"]
-
     assert parsed == [
-        Mask(mask="00", mem=None),
-        Mem(mem=[1, 1], mask=None),
-        Mask(mask="01", mem=None),
-        Mem(mem=[2, 2], mask=None),
+        namespace(mask="00", mem=None),
+        namespace(mem=[1, 1], mask=None),
+        namespace(mask="01", mem=None),
+        namespace(mem=[2, 2], mask=None),
     ]
 
 
