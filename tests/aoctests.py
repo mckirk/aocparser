@@ -9,7 +9,7 @@ Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"""
 
     spec = "[Card {key:i}: {p1:il} `| {p2:il}|\n]"
 
-    parsed = parse(example, spec)
+    parsed = parse(spec, example)
 
     pprint(parsed)
 
@@ -39,7 +39,7 @@ seeds: {seeds:il}
 {maps:[{key:w}-to-{to:w} map:
 {vals:[{il}|\n]}|\n\n]}"""
 
-    parsed = parse(example, spec)
+    parsed = parse(spec, example)
 
     pprint(parsed)
 

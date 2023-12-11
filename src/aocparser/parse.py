@@ -3,7 +3,7 @@ from lark import Lark, Transformer
 import aocparser.dsl as dsl
 
 
-def parse(input, spec):
+def parse(spec, input):
     transformer, dsl_parser = dsl.get_parser()
     parsed_dsl = dsl_parser.parse(spec)
 
