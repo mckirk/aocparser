@@ -23,12 +23,15 @@ class DSLElement(ABC):
         assert self.rule_name is not None
 
     def get_name(self, *args):
+        """Return the key this element should be stored under in the result"""
         return self.name
 
     def get_inner_elements(self) -> list["DSLElement"]:
+        """Return a list of child-elements that also need their transforms registered"""
         return []
 
     def register_transforms(self, transformer, override_rule_name: str | None = None):
+        """Register the transforms for this element and all its children"""
         transformer.__setattr__(
             override_rule_name or self.rule_name,
             lambda *args: (self.get_name(*args), self.transform(*args)),
@@ -39,10 +42,12 @@ class DSLElement(ABC):
 
     @abstractmethod
     def create_rule(self, grammar_constructor: GrammarConstructor):
+        """Create the rule for this element and register it with the grammar constructor"""
         ...
 
     @abstractmethod
     def transform(self, *args):
+        """Transform the result of the parse into the final result"""
         ...
 
 
@@ -64,6 +69,7 @@ class DSLMultiElement(DSLElement):
 
 class SequenceElement(DSLMultiElement):
     def create_rule(self, grammar_constructor):
+        """Create a rule that simply concatenates the rules of all child-elements"""
         rule_parts = []
         for c in self.content:
             if isinstance(c, DSLElement):
@@ -75,6 +81,7 @@ class SequenceElement(DSLMultiElement):
         self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
 
     def get_name(self, *args):
+        """If the sequence has an element of name 'key', use that as the key in the result"""
         elems = args[0]
         keys = [e[0] for e in elems]
         if "key" in keys:
@@ -83,6 +90,7 @@ class SequenceElement(DSLMultiElement):
             return super().get_name(*args)
 
     def transform(self, *args):
+        """If we have any named child-elements, return a dict; otherwise, return a list (or the only element directly)"""
         elems = args[0]
         keys = [e[0] for e in elems]
         vals = [e[1] for e in elems]
@@ -111,6 +119,7 @@ class ContainerElement(DSLMultiElement):
         return [self.inner]
 
     def create_rule(self, grammar_constructor):
+        """Create a rule that matches the inner rule one or more times, separated by the 'join' argument"""
         inner_rule_name = self.inner.rule_name
 
         if self.join is None:
@@ -122,6 +131,10 @@ class ContainerElement(DSLMultiElement):
         self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
 
     def transform(self, *args):
+        """
+        If we have any named child-elements, return a dict; otherwise, return a list
+        Difference from SequenceElement: if there's only one element, we still return a list
+        """
         elems = args[0]
         keys = [e[0] for e in elems]
 
@@ -131,6 +144,32 @@ class ContainerElement(DSLMultiElement):
             res = [v for k, v in elems]
 
         return res
+    
+
+class ChoiceElement(DSLElement):
+    def __init__(
+        self,
+        *,
+        tag: str,
+        left: list,
+        right: list,
+        grammar_constructor: GrammarConstructor,
+    ):
+        self.left = left
+        self.right = right
+        super().__init__(tag=tag, name=None, grammar_constructor=grammar_constructor)
+
+    def get_inner_elements(self):
+        return [self.left, self.right]
+    
+    def create_rule(self, grammar_constructor):
+        """Create a rule that matches either the left or the right rule"""
+        self.rule = f"{self.left.rule_name} | {self.right.rule_name}"
+        self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
+
+    def transform(self, *args):
+        """Return the result of the left or right rule"""
+        return args[0][0]
 
 
 def build_terminal_elem(terminal, transform_f=None):

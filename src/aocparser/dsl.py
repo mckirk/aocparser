@@ -5,18 +5,19 @@ from typing import Type
 from lark import Lark, Token, Transformer, v_args
 
 from aocparser.grammar_constructor import GrammarConstructor
-from aocparser.elements import TAG_TO_CLASS, DSLElement, DSLMultiElement, ContainerElement, SequenceElement
+from aocparser.elements import TAG_TO_CLASS, ChoiceElement, DSLElement, DSLMultiElement, ContainerElement, SequenceElement
 
 
 dsl_grammar = """
 start: sequence
 
-sequence: (element | multi_element | TEXT)*
+sequence: (element | multi_element | choice_element | TEXT)*
 
 element: "{" CNAME (":" (CNAME | multi_element))? "}"
 multi_element: "[" sequence "]" | "[" sequence "|" TEXT "]"
+choice_element: "<" CNAME ":" sequence "|" CNAME ":" sequence ">"
 
-TEXT: /(?:`.|[^\[{}\]|`])+/
+TEXT: /(?:`.|[^\[{}\]|`<>])+/
 
 %ignore " "
 %import common.CNAME
@@ -57,6 +58,11 @@ class DSLTransformer(Transformer):
             content, join = args[0], None
 
         return ContainerElement(tag="container", name=None, join=join, content=content, grammar_constructor=self.grammar_constructor)
+    
+    def choice_element(self, args):
+        left = SequenceElement(tag="left", name=args[0], content=args[1], grammar_constructor=self.grammar_constructor)
+        right = SequenceElement(tag="right", name=args[2], content=args[3], grammar_constructor=self.grammar_constructor)
+        return ChoiceElement(tag="choice", left=left, right=right, grammar_constructor=self.grammar_constructor)
 
     def sequence(self, items):
         return list(items)

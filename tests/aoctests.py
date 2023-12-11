@@ -14,9 +14,7 @@ Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"""
     pprint(parsed)
 
     assert parsed == {
-        1: {"key": 1,
-            "p1": [41, 48, 83, 86, 17],
-            "p2": [83, 86, 6, 31, 17, 9, 48, 53]},
+        1: {"key": 1, "p1": [41, 48, 83, 86, 17], "p2": [83, 86, 6, 31, 17, 9, 48, 53]},
         2: {
             "key": 2,
             "p1": [13, 32, 20, 16, 61],
@@ -52,7 +50,7 @@ seeds: {seeds:il}
 
 
 def test3():
-    inp = """\
+    example = """\
 RL
 
 AAA = (BBB, CCC)
@@ -63,7 +61,7 @@ BBB = (DDD, EEE)"""
 
 [{key:w} = ({L:w}, {R:w})|\n]"""
 
-    parsed = parse(inp, spec)
+    parsed = parse(spec, example)
 
     pprint(parsed)
 
@@ -76,10 +74,28 @@ BBB = (DDD, EEE)"""
     ]
 
 
+def test4():
+    spec = """\
+[<mask:mask = {w}|mem:mem`[{i}`] = {i}>|\n]"""
+
+    inp = """\
+mask = 00
+mem[1] = 1
+mask = 01
+mem[2] = 2"""
+
+    parsed = parse(spec, inp)
+
+    pprint(parsed)
+
+    assert parsed == [("mask", "00"), ("mem", [1, 1]), ("mask", "01"), ("mem", [2, 2])]
+
+
 def main():
     test1()
     test2()
     test3()
+    test4()
 
 
 if __name__ == "__main__":
