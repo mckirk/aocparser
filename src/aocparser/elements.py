@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from collections import namedtuple
 import json
-from types import SimpleNamespace
 
 from aocparser.grammar_constructor import GrammarConstructor
+from aocparser.result import NamespaceDict
 
 
 class DSLElement(ABC):
@@ -98,7 +97,13 @@ class SequenceElement(DSLMultiElement):
         vals = [e[1] for e in elems]
 
         if any(k is not None for k in keys):
-            return {(k if k is not None else i): v for i, (k, v) in enumerate(elems)}
+            res = NamespaceDict()
+            for i, (k, v) in enumerate(elems):
+                if k is not None:
+                    res[k] = v
+                else:
+                    res[i] = v
+            return res
 
         if len(vals) == 1:
             return vals[0]
@@ -143,7 +148,13 @@ class ContainerElement(DSLMultiElement):
         keys = [e[0] for e in elems]
 
         if any(k is not None for k in keys):
-            res = {(k if k is not None else i): v for i, (k, v) in enumerate(elems)}
+            res = NamespaceDict()
+            for i, (k, v) in enumerate(elems):
+                if k is not None:
+                    res[k] = v
+                else:
+                    res[i] = v
+            return res
         else:
             res = [v for k, v in elems]
 
@@ -177,7 +188,7 @@ class ChoiceElement(DSLElement):
         """Return the result of the left or right rule"""
         t, v = args[0][0]
         other_t = self.left.name if t == self.right.name else self.right.name
-        return SimpleNamespace(**{t: v, other_t: None})
+        return NamespaceDict(**{t: v, other_t: None})
 
 
 def build_terminal_elem(terminal, transform_f=None):
