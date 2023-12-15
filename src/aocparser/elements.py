@@ -176,6 +176,11 @@ class ChoiceElement(DSLElement):
         self.right = right
         super().__init__(tag=tag, name=None, grammar_constructor=grammar_constructor)
 
+        # find names that are common to both sides (minus the names of the choices themselves)
+        left_names = set(e.name for e in self.left.get_inner_elements())
+        right_names = set(e.name for e in self.right.get_inner_elements())   
+        self.common_names = left_names & right_names - {left.name, right.name}
+
     def get_inner_elements(self):
         return [self.left, self.right]
 
@@ -188,7 +193,16 @@ class ChoiceElement(DSLElement):
         """Return the result of the left or right rule"""
         t, v = args[0][0]
         other_t = self.left.name if t == self.right.name else self.right.name
-        return NamespaceDict(**{t: v, other_t: None})
+
+        res = NamespaceDict()
+        res[t] = v
+        res[other_t] = None
+
+        for name in self.common_names:
+            if isinstance(v, dict) and name in v:
+                res[name] = v[name]
+
+        return res
 
 
 def build_terminal_elem(terminal, transform_f=None):

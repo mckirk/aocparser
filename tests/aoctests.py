@@ -98,11 +98,31 @@ mem[2] = 2"""
     assert parsed[1].mem.addr == 1
 
 
+def test5():
+    spec = "[<set:{n:w}={v:i}|minus:{n:w}->|,]"
+
+    inp = "a=1,b=2,c-"
+
+    parsed = parse(spec, inp)
+
+    pprint(parsed)
+
+    assert parsed == [
+        {"minus": None, "n": "a", "set": {"n": "a", "v": 1}},
+        {"minus": None, "n": "b", "set": {"n": "b", "v": 2}},
+        {"minus": {"n": "c"}, "n": "c", "set": None},
+    ]
+
+    assert parsed[0].n == "a"
+    assert parsed[2].n == "c"
+
+
 def main():
     test1()
     test2()
     test3()
     test4()
+    test5()
 
 
 if __name__ == "__main__":

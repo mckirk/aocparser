@@ -66,9 +66,16 @@ If a value element inside the container has the name `key`, the container is par
 Choice elements (i.e., elements that should be parsed into one of two values) are denoted by angle brackets (`<` and `>`), with the choices separated by a pipe (`|`).
 To distinguish the choices, they need to be named, with the name given before a colon (`:`).
 
-> `<num:{i}|word:{w}>` matches `42` and parses into `namespace(num=42, word=None)`, and matches `foo` and parses into `namespace(num=None, word='foo')`.
->
-> `namespace` is a simple class that stores the given attributes, i.e. `namespace(num=42, word=None).num == 42`.
+> `<num:{i}|word:{w}>` matches `42` and parses into `dict(num=42, word=None)`, and matches `foo` and parses into `dict(word='foo', num=None)`.
+
+If both choices contain an element with the same name, that element is lifted to the result of the choice element as well.
+
+> `<inc:{n:w}++|dec:{n:w}-->` matches `a++` and parses into `dict(n='a', inc={'n': 'a'}, dec=None)`, and matches `a--` and parses into `dict(n='a', dec={'n': 'a'}, inc=None)`.
+
+## Returned 'dict' type
+
+The returned dictionaries are actually `NamespaceDict`s, which subclass dictionaries to also allow access to the values as attributes.
+This means that `parsed['foo']` is equivalent to `parsed.foo`.
 
 
 ## Examples
@@ -150,7 +157,6 @@ assert parse(spec, example) == [
 ### 2020/day14
 
 ```python
-from types import SimpleNamespace as namespace
 from aocparser import parse
 
 example = """\
@@ -162,9 +168,33 @@ mem[2] = 2"""
 spec = "[<mask:mask = {w}|mem:mem`[{i}`] = {i}>|\n]"
 
 assert parsed == [
-    namespace(mask="00", mem=None),
-    namespace(mem=[1, 1], mask=None),
-    namespace(mask="01", mem=None),
-    namespace(mem=[2, 2], mask=None),
+    {"mask": "00", "mem": None},
+    {"mask": None, "mem": {"addr": 1, "val": 1}},
+    {"mask": "01", "mem": None},
+    {"mask": None, "mem": {"addr": 2, "val": 2}},
 ]
+
+assert parsed[0].mask == "00"
+assert parsed[1].mem.addr == 1
+```
+
+### 2023/day15
+
+```python
+from aocparser import parse
+
+example = "a=1,b=2,c-"
+
+spec = "[<set:{n:w}={v:i}|minus:{n:w}->|,]"
+
+parsed = parse(spec, example)
+
+assert parsed == [
+    {"minus": None, "n": "a", "set": {"n": "a", "v": 1}},
+    {"minus": None, "n": "b", "set": {"n": "b", "v": 2}},
+    {"minus": {"n": "c"}, "n": "c", "set": None},
+]
+
+assert parsed[0].n == "a"
+assert parsed[2].n == "c"
 ```
