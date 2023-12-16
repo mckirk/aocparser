@@ -22,7 +22,7 @@ sequence: (element | multi_element | choice_element | TEXT)*
 
 element: "{" CNAME (":" (CNAME | multi_element))? "}"
 multi_element: "[" sequence "]" | "[" sequence "|" TEXT "]"
-choice_element: "<" CNAME ":" sequence "|" CNAME ":" sequence ">"
+choice_element: "<" CNAME ":" sequence ("|" CNAME ":" sequence)+ ">"
 
 TEXT: /(?:`.|[^\[{}\]|`<>])+/
 
@@ -75,22 +75,17 @@ class DSLTransformer(Transformer):
         )
 
     def choice_element(self, args):
-        left = SequenceElement(
-            tag="left",
-            name=args[0],
-            content=args[1],
-            grammar_constructor=self.grammar_constructor,
-        )
-        right = SequenceElement(
-            tag="right",
-            name=args[2],
-            content=args[3],
-            grammar_constructor=self.grammar_constructor,
-        )
+        choices = []
+        for i in range(0, len(args), 2):
+            choices.append(SequenceElement(
+                tag="choice",
+                name=args[i],
+                content=args[i + 1],
+                grammar_constructor=self.grammar_constructor,
+            ))
         return ChoiceElement(
             tag="choice",
-            left=left,
-            right=right,
+            choices=choices,
             grammar_constructor=self.grammar_constructor,
         )
 

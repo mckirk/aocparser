@@ -99,18 +99,19 @@ mem[2] = 2"""
 
 
 def test5():
-    spec = "[<set:{n:w}={v:i}|minus:{n:w}->|,]"
+    spec = "[<set:{n:w}={v:i}|minus:{n:w}-|plus:{n:w}+>|,]"
 
-    inp = "a=1,b=2,c-"
+    inp = "a=1,b=2,c-,d+"
 
     parsed = parse(spec, inp)
 
     pprint(parsed)
 
     assert parsed == [
-        {"minus": None, "n": "a", "set": {"n": "a", "v": 1}},
-        {"minus": None, "n": "b", "set": {"n": "b", "v": 2}},
-        {"minus": {"n": "c"}, "n": "c", "set": None},
+        {"minus": None, "n": "a", "plus": None, "set": {"n": "a", "v": 1}},
+        {"minus": None, "n": "b", "plus": None, "set": {"n": "b", "v": 2}},
+        {"minus": {"n": "c"}, "n": "c", "plus": None, "set": None},
+        {"minus": None, "n": "d", "plus": {"n": "d"}, "set": None},
     ]
 
     assert parsed[0].n == "a"

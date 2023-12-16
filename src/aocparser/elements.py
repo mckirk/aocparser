@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from functools import reduce
 import json
 
 from aocparser.grammar_constructor import GrammarConstructor
@@ -166,37 +167,36 @@ class ChoiceElement(DSLElement):
         self,
         *,
         tag: str,
-        left: SequenceElement,
-        right: SequenceElement,
+        choices: list[SequenceElement],
         grammar_constructor: GrammarConstructor,
     ):
-        assert left.name != right.name
+        names = [c.name for c in choices]
+        assert len(names) == len(set(names))
 
-        self.left = left
-        self.right = right
+        self.choices = choices
         super().__init__(tag=tag, name=None, grammar_constructor=grammar_constructor)
 
         # find names that are common to both sides (minus the names of the choices themselves)
-        left_names = set(e.name for e in self.left.get_inner_elements())
-        right_names = set(e.name for e in self.right.get_inner_elements())   
-        self.common_names = left_names & right_names - {left.name, right.name}
+        inner_names = [set(c.name for c in choice.get_inner_elements()) for choice in choices]
+        self.common_names = reduce(lambda a, b: a & b, inner_names) - set(names)
 
     def get_inner_elements(self):
-        return [self.left, self.right]
+        return self.choices
 
     def create_rule(self, grammar_constructor):
         """Create a rule that matches either the left or the right rule"""
-        self.rule = f"{self.left.rule_name} | {self.right.rule_name}"
+        self.rule = " | ".join(c.rule_name for c in self.choices)
         self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
 
     def transform(self, *args):
         """Return the result of the left or right rule"""
         t, v = args[0][0]
-        other_t = self.left.name if t == self.right.name else self.right.name
+        other_ts = [c.name for c in self.choices if c.name != t]
 
         res = NamespaceDict()
         res[t] = v
-        res[other_t] = None
+        for name in other_ts:
+            res[name] = None
 
         for name in self.common_names:
             if isinstance(v, dict) and name in v:
