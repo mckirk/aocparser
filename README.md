@@ -61,14 +61,27 @@ If a value element inside the container has the name `key`, the container is par
 >  'bar': {'key': 'bar', 'val': 43}}
 > ```
 
+If a container has two child elements, one 'key' element and one unnamed element, the unnamed element gets returned directly as the value:
+
+> `[{key:w} = {i}|\n]` matches
+> ```ini
+> foo = 42
+> bar = 43
+> ```
+> and parses into
+> ```python
+> {'foo': 42,
+>  'bar': 43}
+> ```
+
 ### Choice elements
 
-Choice elements (i.e., elements that should be parsed into one of two values) are denoted by angle brackets (`<` and `>`), with the choices separated by a pipe (`|`).
+Choice elements (i.e., elements that should be parsed into one of multiple options) are denoted by angle brackets (`<` and `>`), with the choices separated by a pipe (`|`).
 To distinguish the choices, they need to be named, with the name given before a colon (`:`).
 
-> `<num:{i}|word:{w}>` matches `42` and parses into `dict(num=42, word=None)`, and matches `foo` and parses into `dict(word='foo', num=None)`.
+> `<num:{i}|word:{w}|nop:nop>` matches `42` and parses into `dict(num=42, word=None)`, and matches `foo` and parses into `dict(word='foo', num=None)`.
 
-If both choices contain an element with the same name, that element is lifted to the result of the choice element as well.
+If all choices contain an element with the same name, that element is lifted to the result of the choice element as well.
 
 > `<inc:{n:w}++|dec:{n:w}-->` matches `a++` and parses into `dict(n='a', inc={'n': 'a'}, dec=None)`, and matches `a--` and parses into `dict(n='a', dec={'n': 'a'}, inc=None)`.
 

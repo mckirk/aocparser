@@ -97,6 +97,9 @@ class SequenceElement(DSLMultiElement):
         keys = [e[0] for e in elems]
         vals = [e[1] for e in elems]
 
+        if len(elems) == 2 and set(keys) == {"key", None}:
+            return {k: v for k, v in elems}[None]
+
         if any(k is not None for k in keys):
             res = NamespaceDict()
             for i, (k, v) in enumerate(elems):
@@ -143,11 +146,13 @@ class ContainerElement(DSLMultiElement):
     def transform(self, *args):
         """
         If we have any named child-elements, return a dict; otherwise, return a list
-        Difference from SequenceElement: if there's only one element, we still return a list
+        Difference from SequenceElement:
+        - if there's only one element, we still return a list
+        - if we'd return a dict with a one 'key' element and another unnamed element, return that unnamed element directly
         """
         elems = args[0]
         keys = [e[0] for e in elems]
-
+        
         if any(k is not None for k in keys):
             res = NamespaceDict()
             for i, (k, v) in enumerate(elems):

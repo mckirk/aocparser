@@ -118,12 +118,25 @@ def test5():
     assert parsed[2].n == "c"
 
 
+def test6():
+    spec = "[{key:w}={i}|,]"
+
+    inp = "a=1,b=2,c=3"
+
+    parsed = parse(spec, inp)
+
+    pprint(parsed)
+
+    assert parsed == {"a": 1, "b": 2, "c": 3}
+
+
 def main():
     test1()
     test2()
     test3()
     test4()
     test5()
+    test6()
 
 
 if __name__ == "__main__":
