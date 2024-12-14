@@ -13,8 +13,9 @@ def parse(spec, input):
     parsed_dsl.register_transforms(constructed_transformer)
 
     constructed_parser = Lark(
-        constructed_grammar, parser="lalr", transformer=constructed_transformer
+        constructed_grammar, parser="earley"
     )
 
-    parsed_example = constructed_parser.parse(input)
-    return parsed_example[1]
+    parse_tree = constructed_parser.parse(input)
+
+    return constructed_transformer.transform(parse_tree)[1]

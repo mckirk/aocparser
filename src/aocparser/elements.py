@@ -132,15 +132,10 @@ class ContainerElement(DSLMultiElement):
         return [self.inner]
 
     def create_rule(self, grammar_constructor):
-        """Create a rule that matches the inner rule one or more times, separated by the 'join' argument"""
+        """Create a rule that matches the inner rule one or more times, separated by the 'join' argument (or WS, if join is None)"""
         inner_rule_name = self.inner.rule_name
-
-        if self.join is None:
-            self.rule = f"{inner_rule_name}*"
-        else:
-            self.rule = (
-                f"{inner_rule_name} ({json.dumps(self.join)} {inner_rule_name})*"
-            )
+        join = json.dumps(self.join) if self.join else "_WS"
+        self.rule = f"{inner_rule_name} ({join} {inner_rule_name})*"
         self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
 
     def transform(self, *args):
@@ -244,15 +239,18 @@ def build_list_elem(inner_class):
 
 
 IntElement = build_terminal_elem("INT", int)
+SignedIntElement = build_terminal_elem("SIGNED_INT", int)
 WordElement = build_terminal_elem("ALPHANUMWORD")
 NameElement = build_terminal_elem("CNAME")
 
 
 TAG_TO_CLASS = {
     "i": IntElement,
+    "si": SignedIntElement,
     "w": WordElement,
     "n": NameElement,
     "il": build_list_elem(IntElement),
+    "sil": build_list_elem(SignedIntElement),
     "wl": build_list_elem(WordElement),
     "nl": build_list_elem(NameElement),
 }

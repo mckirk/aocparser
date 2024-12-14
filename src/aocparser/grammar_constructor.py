@@ -28,13 +28,17 @@ class GrammarConstructor:
         grammar += """
 ALPHANUM: LETTER | DIGIT
 ALPHANUMWORD: ALPHANUM+
+_WS_INLINE: WS_INLINE
+_WS: WS
 
 %import common.INT
+%import common.SIGNED_INT
 %import common.WORD
 %import common.CNAME
 %import common.LETTER
 %import common.DIGIT
-%ignore " "\
+%import common.WS_INLINE
+%import common.WS\
 """
 
         return grammar
