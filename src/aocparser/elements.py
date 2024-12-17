@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from functools import reduce
 import json
+from typing import Optional
 
 from aocparser.grammar_constructor import GrammarConstructor
 from aocparser.result import NamespaceDict
@@ -11,14 +12,14 @@ class DSLElement(ABC):
         self,
         *,
         tag: str,
-        name: str | None,
+        name: Optional[str],
         grammar_constructor: GrammarConstructor,
     ):
         self.tag = tag
         self.name = name
 
-        self.rule_name: str | None = None
-        self.rule: str | None = None
+        self.rule_name: Optional[str] = None
+        self.rule: Optional[str] = None
 
         self.create_rule(grammar_constructor)
 
@@ -32,7 +33,9 @@ class DSLElement(ABC):
         """Return a list of child-elements that also need their transforms registered"""
         return []
 
-    def register_transforms(self, transformer, override_rule_name: str | None = None):
+    def register_transforms(
+        self, transformer, override_rule_name: Optional[str] = None
+    ):
         """Register the transforms for this element and all its children"""
         transformer.__setattr__(
             override_rule_name or self.rule_name,
@@ -58,7 +61,7 @@ class DSLMultiElement(DSLElement):
         self,
         *,
         tag: str,
-        name: str | None,
+        name: Optional[str],
         content: list,
         grammar_constructor: GrammarConstructor,
     ):
@@ -147,7 +150,7 @@ class ContainerElement(DSLMultiElement):
         """
         elems = args[0]
         keys = [e[0] for e in elems]
-        
+
         if any(k is not None for k in keys):
             res = NamespaceDict()
             for i, (k, v) in enumerate(elems):
@@ -177,7 +180,9 @@ class ChoiceElement(DSLElement):
         super().__init__(tag=tag, name=None, grammar_constructor=grammar_constructor)
 
         # find names that are common to both sides (minus the names of the choices themselves)
-        inner_names = [set(c.name for c in choice.get_inner_elements()) for choice in choices]
+        inner_names = [
+            set(c.name for c in choice.get_inner_elements()) for choice in choices
+        ]
         self.common_names = reduce(lambda a, b: a & b, inner_names) - set(names)
 
     def get_inner_elements(self):
