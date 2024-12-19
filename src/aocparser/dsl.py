@@ -24,7 +24,7 @@ element: "{" CNAME (":" (CNAME | multi_element))? "}"
 multi_element: "[" sequence "]" | "[" sequence "|" TEXT "]"
 choice_element: "<" CNAME ":" sequence ("|" CNAME ":" sequence)+ ">"
 
-TEXT: /(?:`.|[^\[{}\]|`<>])+/
+TEXT: /(?:\\\\.|[^\[{}\]|\\\\<>])+/
 
 %ignore " "
 %import common.CNAME
@@ -36,7 +36,7 @@ def interpret_as_literal(value):
 
 
 def unescape(text):
-    return re.sub(r"`(.)", r"\1", text)
+    return re.sub(r"\\(.)", r"\1", text)
 
 
 class DSLTransformer(Transformer):

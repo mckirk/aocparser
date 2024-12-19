@@ -8,7 +8,7 @@ class TestAocParser(unittest.TestCase):
 Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"""
 
-        spec = "[Card {key:i}: {p1:il} `| {p2:il}]"
+        spec = "[Card {key:i}: {p1:il} \\| {p2:il}]"
 
         parsed = parse(spec, example)
 
@@ -81,7 +81,7 @@ BBB = (DDD, EEE)"""
         self.assertEqual(parsed, expected)
 
     def test_choice(self):
-        spec = "[<mask:mask = {w}|mem:mem`[{addr:i}`] = {val:i}>]"
+        spec = "[<mask:mask = {w}|mem:mem\\[{addr:i}\\] = {val:i}>]"
 
         inp = """\
 mask = 00
