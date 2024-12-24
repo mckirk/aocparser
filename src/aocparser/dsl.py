@@ -1,8 +1,7 @@
 import ast
-from dataclasses import dataclass, field
 import re
 from typing import Type
-from lark import Lark, Token, Transformer, v_args
+from lark import Lark, Transformer
 
 from aocparser.grammar_constructor import GrammarConstructor
 from aocparser.elements import (
@@ -15,7 +14,7 @@ from aocparser.elements import (
 )
 
 
-dsl_grammar = """
+dsl_grammar = r"""
 start: sequence
 
 sequence: (element | multi_element | choice_element | TEXT)*
@@ -24,9 +23,8 @@ element: "{" CNAME (":" (CNAME | multi_element))? "}"
 multi_element: "[" sequence "]" | "[" sequence "|" TEXT "]"
 choice_element: "<" CNAME ":" sequence ("|" CNAME ":" sequence)+ ">"
 
-TEXT: /(?:\\\\.|[^\[{}\]|\\\\<>])+/
+TEXT: /(?:\\.|[^\[{}\]|\\<>])+/
 
-%ignore " "
 %import common.CNAME
 """
 
