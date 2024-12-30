@@ -111,11 +111,11 @@ This means that `parsed['foo']` is equivalent to `parsed.foo`.
 ```python
 from aocparser import parse
 
-example = r"""\
+example = """\
 Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"""
 
-spec = "[Card {key:i}: {p1:il} \| {p2:il}]"
+spec = r"[Card {key:i}: {p1:il} \| {p2:il}]"
 
 assert parse(spec, example) == {
     1: {"key": 1,
@@ -223,4 +223,53 @@ assert parsed == [
 
 assert parsed[0].n == "a"
 assert parsed[2].n == "c"
+```
+
+### 2024/day24
+
+```python
+from aocparser import parse
+
+example = """\
+x00: 1
+x01: 1
+x02: 1
+y00: 0
+y01: 1
+y02: 0
+
+x00 AND y00 -> z00
+x01 XOR y01 -> z01
+x02 OR y02 -> z02"""
+
+spec = r"""
+[{key:w}: {i}]
+
+[{w} <and_:AND|xor_:XOR|or_:OR> {w} -\> {key:w}]""".strip()
+
+parsed = parse(spec, example)
+
+assert parsed == [
+    {"x00": 1, "x01": 1, "x02": 1, "y00": 0, "y01": 1, "y02": 0},
+    {
+        "z00": {
+            0: "x00",
+            1: {"and_": True, "or_": None, "xor_": None},
+            2: "y00",
+            "key": "z00",
+        },
+        "z01": {
+            0: "x01",
+            1: {"and_": None, "or_": None, "xor_": True},
+            2: "y01",
+            "key": "z01",
+        },
+        "z02": {
+            0: "x02",
+            1: {"and_": None, "or_": True, "xor_": None},
+            2: "y02",
+            "key": "z02",
+        },
+    },
+]
 ```

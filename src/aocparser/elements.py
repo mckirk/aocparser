@@ -196,17 +196,17 @@ class ChoiceElement(DSLElement):
         return self.choices
 
     def create_rule(self, grammar_constructor):
-        """Create a rule that matches either the left or the right rule"""
+        """Create a rule that matches any of the sub-rules"""
         self.rule = " | ".join(c.rule_name for c in self.choices)
         self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
 
     def transform(self, *args):
-        """Return the result of the left or right rule"""
+        """Return the result of the matching sub-rule"""
         t, v = args[0][0]
         other_ts = [c.name for c in self.choices if c.name != t]
 
         res = NamespaceDict()
-        res[t] = v
+        res[t] = v or True  # Always return a truthy value for the matched rule
         for name in other_ts:
             res[name] = None
 

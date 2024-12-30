@@ -8,7 +8,7 @@ class TestAocParser(unittest.TestCase):
 Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"""
 
-        spec = "[Card {key:i}: {p1:il} \\| {p2:il}]"
+        spec = r"[Card {key:i}: {p1:il} \| {p2:il}]"
 
         parsed = parse(spec, example)
 
@@ -133,6 +133,52 @@ mem[2] = 2"""
         parsed = parse(spec, inp)
         expected = [0, 4, 3, -3]
         self.assertEqual(parsed, expected)
+
+    def test_bare_choice(self):
+        spec = r"""
+[{key:w}: {i}]
+
+[{w} <and_:AND|xor_:XOR|or_:OR> {w} -\> {key:w}]""".strip()
+
+        inp = """\
+x00: 1
+x01: 1
+x02: 1
+y00: 0
+y01: 1
+y02: 0
+
+x00 AND y00 -> z00
+x01 XOR y01 -> z01
+x02 OR y02 -> z02"""
+
+        parsed = parse(spec, inp)
+        self.assertEqual(
+            parsed,
+            [
+                {"x00": 1, "x01": 1, "x02": 1, "y00": 0, "y01": 1, "y02": 0},
+                {
+                    "z00": {
+                        0: "x00",
+                        1: {"and_": True, "or_": None, "xor_": None},
+                        2: "y00",
+                        "key": "z00",
+                    },
+                    "z01": {
+                        0: "x01",
+                        1: {"and_": None, "or_": None, "xor_": True},
+                        2: "y01",
+                        "key": "z01",
+                    },
+                    "z02": {
+                        0: "x02",
+                        1: {"and_": None, "or_": True, "xor_": None},
+                        2: "y02",
+                        "key": "z02",
+                    },
+                },
+            ],
+        )
 
 
 if __name__ == "__main__":
