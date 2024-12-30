@@ -1,4 +1,5 @@
 import ast
+import json
 import re
 from typing import Type
 from lark import Lark, Transformer
@@ -59,15 +60,16 @@ class DSLTransformer(Transformer):
             return tag
 
     def multi_element(self, args):
+        content = args[0]
         if len(args) == 2:
-            content, join = args
+            join_terminal = json.dumps(args[1])
         else:
-            content, join = args[0], None
+            join_terminal = "_WS"
 
         return ContainerElement(
             tag="container",
             name=None,
-            join=join,
+            join_terminal=join_terminal,
             content=content,
             grammar_constructor=self.grammar_constructor,
         )

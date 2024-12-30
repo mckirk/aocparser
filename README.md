@@ -8,9 +8,9 @@ The grammar consists of four basic constructs:
 
 ### Literals
 
-Literals are matched exactly. Characters with special meaning, i.e. `[`, `]`, `{`, `}`, `<`, `>`, and `|` must be escaped with a backtick (`` ` ``).
+Literals are matched exactly. Characters with special meaning, i.e. `[`, `]`, `{`, `}`, `<`, `>`, and `|` must be escaped with a backslash (`` \ ``).
 
-> ``foo`|bar`` matches `foo|bar`.
+> ``foo\|bar`` matches `foo|bar`.
 
 ### Value elements
 
@@ -22,17 +22,19 @@ The name of the value element is optional. If no name is given, the value is sto
 If none of the value elements in the container element are named, the container element is parsed into a list.
 Otherwise, it is parsed into a dict.
 
-> `{i}{i}` matches `42 43` and parses into `[42, 43]`
+> `{i} {i}` matches `42 43` and parses into `[42, 43]`
 
-> `{i}{bar:i}` matches `42 43` and parses into `{0: 42, 'bar': 43}`.
+> `{i} {bar:i}` matches `42 43` and parses into `{0: 42, 'bar': 43}`.
 
 #### Defined types
 
 Currently, the following types are defined:
 - `i`: integer
+- `si`: signed integer (optionally starting with a +/-)
 - `w`: word (i.e., an alphanumeric string without whitespace)
 - `n`: name (i.e., a word not starting with a number)
-- `il`: list of integers
+- `il`: list of integers, separated by 'inline whitespace' (i.e., non-linebreak whitespace)
+- `sil`: list of signed integers
 - `wl`: list of words
 - `nl`: list of names
 
@@ -42,15 +44,22 @@ Container elements (i.e., elements that should be parsed into a list or a dict) 
 
 > `[{i}|,]` matches `42,43` and parses into `[42, 43]`.
 
-The join string is optional. If no join string is given, it will default to (an arbitrary amount of) spaces.
+The join string is optional. If no join string is given, it will default to (an arbitrary amount of) whitespace (i.e., spaces, tabs, newlines).
 
 > `[{i}]` matches `42 43` and parses into `[42, 43]`.
 
+> `[{il}]` matches
+> ```
+> 42 43
+> 44 45
+> ```
+> and parses into `[[42, 43], [44, 45]]`.
+
 #### Dicts
 
-If a value element inside the container has the name `key`, the container is parsed into a dict, with the value of the `key` element as the key.
+If a value element inside a container has the name `key`, the container is parsed into a dict, with the value of the `key` element as the key.
 
-> `[{key:w} = {val:i}|\n]` matches
+> `[{key:w} = {val:i}]` matches
 > ```ini
 > foo = 42
 > bar = 43
@@ -63,7 +72,7 @@ If a value element inside the container has the name `key`, the container is par
 
 If a container has two child elements, one 'key' element and one unnamed element, the unnamed element gets returned directly as the value:
 
-> `[{key:w} = {i}|\n]` matches
+> `[{key:w} = {i}]` matches
 > ```ini
 > foo = 42
 > bar = 43
@@ -79,11 +88,15 @@ If a container has two child elements, one 'key' element and one unnamed element
 Choice elements (i.e., elements that should be parsed into one of multiple options) are denoted by angle brackets (`<` and `>`), with the choices separated by a pipe (`|`).
 To distinguish the choices, they need to be named, with the name given before a colon (`:`).
 
-> `<num:{i}|word:{w}|nop:nop>` matches `42` and parses into `dict(num=42, word=None)`, and matches `foo` and parses into `dict(word='foo', num=None)`.
+> `<num:{i}|word:{w}>`
+> - matches `42` and parses into `dict(num=42, word=None)`
+> - matches `foo` and parses into `dict(word='foo', num=None)`
 
 If all choices contain an element with the same name, that element is lifted to the result of the choice element as well.
 
-> `<inc:{n:w}++|dec:{n:w}-->` matches `a++` and parses into `dict(n='a', inc={'n': 'a'}, dec=None)`, and matches `a--` and parses into `dict(n='a', dec={'n': 'a'}, inc=None)`.
+> `<inc:{n:w}++|dec:{n:w}-->`
+> - matches `a++` and parses into `dict(n='a', inc={'n': 'a'}, dec=None)`
+> - matches `a--` and parses into `dict(n='a', dec={'n': 'a'}, inc=None)`.
 
 ## Returned 'dict' type
 
@@ -98,11 +111,11 @@ This means that `parsed['foo']` is equivalent to `parsed.foo`.
 ```python
 from aocparser import parse
 
-example = """\
+example = r"""\
 Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19"""
 
-spec = "[Card {key:i}: {p1:il} `| {p2:il}|\n]"
+spec = "[Card {key:i}: {p1:il} \| {p2:il}]"
 
 assert parse(spec, example) == {
     1: {"key": 1,
@@ -132,7 +145,7 @@ spec = """\
 seeds: {seeds:il}
 
 {maps:[{key:w}-to-{to:w} map:
-{vals:[{il}|\n]}|\n\n]}"""
+{vals:[{il}]}]}"""
 
 assert parse(spec, example) == {
     "maps": {
@@ -156,7 +169,7 @@ BBB = (DDD, EEE)"""
 spec = """\
 {w}
 
-[{key:w} = ({L:w}, {R:w})|\n]"""
+[{key:w} = ({L:w}, {R:w})]"""
 
 assert parse(spec, example) == [
     "RL",
@@ -178,7 +191,7 @@ mem[1] = 1
 mask = 01
 mem[2] = 2"""
 
-spec = "[<mask:mask = {w}|mem:mem`[{i}`] = {i}>|\n]"
+spec = r"[<mask:mask = {w}|mem:mem\[{i}\] = {i}>]"
 
 assert parsed == [
     {"mask": "00", "mem": None},

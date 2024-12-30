@@ -39,7 +39,7 @@ seed-to-soil map:
 seeds: {seeds:il}
 
 {maps:[{key:w}-to-{to:w} map:
-{vals:[{il}|\n]}]}"""
+{vals:[{il}]}]}"""
 
         parsed = parse(spec, example)
 

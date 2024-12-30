@@ -62,7 +62,7 @@ class DSLMultiElement(DSLElement):
         *,
         tag: str,
         name: Optional[str],
-        content: list,
+        content: list[DSLElement | str],
         grammar_constructor: GrammarConstructor,
     ):
         self.content = content
@@ -73,7 +73,7 @@ class DSLMultiElement(DSLElement):
 
 
 class SequenceElement(DSLMultiElement):
-    def create_rule(self, grammar_constructor):
+    def create_rule(self, grammar_constructor: GrammarConstructor):
         """Create a rule that simply concatenates the rules of all child-elements"""
         rule_parts = []
         for c in self.content:
@@ -119,14 +119,22 @@ class SequenceElement(DSLMultiElement):
 
 
 class ContainerElement(DSLMultiElement):
-    def __init__(self, *, tag, name, join, content, grammar_constructor):
+    def __init__(
+        self,
+        *,
+        tag: str,
+        name: str,
+        join_terminal: str,
+        content: list[DSLElement | str],
+        grammar_constructor: GrammarConstructor,
+    ):
         self.inner = SequenceElement(
             tag=tag + "_inner",
             name=None,
             content=content,
             grammar_constructor=grammar_constructor,
         )
-        self.join = join
+        self.join_terminal = join_terminal
         super().__init__(
             tag=tag, name=name, content=content, grammar_constructor=grammar_constructor
         )
@@ -134,11 +142,10 @@ class ContainerElement(DSLMultiElement):
     def get_inner_elements(self):
         return [self.inner]
 
-    def create_rule(self, grammar_constructor):
-        """Create a rule that matches the inner rule one or more times, separated by the 'join' argument (or WS, if join is None)"""
+    def create_rule(self, grammar_constructor: GrammarConstructor):
+        """Create a rule that matches the inner rule one or more times, separated by the 'join_terminal'"""
         inner_rule_name = self.inner.rule_name
-        join = json.dumps(self.join) if self.join else "_WS"
-        self.rule = f"{inner_rule_name} ({join} {inner_rule_name})*"
+        self.rule = f"{inner_rule_name} ({self.join_terminal} {inner_rule_name})*"
         self.rule_name = grammar_constructor.add_rule(self.tag, self.rule)
 
     def transform(self, *args):
@@ -229,7 +236,7 @@ def build_list_elem(inner_class):
         return ContainerElement(
             tag=tag,
             name=name,
-            join=None,
+            join_terminal="_WS_INLINE",
             content=[
                 inner_class(
                     tag=tag + "_inner",
